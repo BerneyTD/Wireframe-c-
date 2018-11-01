@@ -23,8 +23,8 @@ namespace _3d
         Bitmap screen;
         private void Form1_Load(object sender, EventArgs e)
         {
-			//EXAMPLE SETUP WHICH CREATES SEVERAL DIFFERENT SHAPE TYPES,
-			//ADDS THEM TO A RECORD, AND CAN USE THESE TO RENDER THEM.
+            //EXAMPLE SETUP WHICH CREATES SEVERAL DIFFERENT SHAPE TYPES,
+            //ADDS THEM TO A RECORD, AND CAN USE THESE TO RENDER THEM.
             screen = new Bitmap(400, 400); // Init screen
 
             Shape tetraheadron = new Shape();
@@ -71,12 +71,12 @@ namespace _3d
             Cube1 = new ShapeRecord(cube, 0, 0, 0.75, 200, 200);
 
             List<ShapeRecord> ShapeList = new List<ShapeRecord> { Tetra1, Cube1 };
-			
-			ClearScreen(); //Set Screen to black
-			foreach(ShapeRecord shapeRec in ShapeList) //Draw each shape in the list of records:
-			{
-				DrawShape(shapeRec, screen)
-			}
+
+            ClearScreen(screen); //Set Screen to black
+            foreach (ShapeRecord shapeRec in ShapeList) //Draw each shape in the list of records:
+            {
+                DrawShape(shapeRec, screen);
+            }
         }
 
         void ClearScreen(Bitmap screen)
@@ -116,10 +116,10 @@ namespace _3d
                     Pen pen;
                     pen = new Pen(shapeRec.colors[0]); //Setting pen color to shape color
                     pen.Width = 1;
-					
+
                     Debug.Write("DRAWING TRIANGLE " + triCount + ":   "); //Debugging information:
                     Debug.WriteLine(newTri.v1.x + ", " + newTri.v1.y + "| " + newTri.v2.x + ", " + newTri.v2.y + "| " + newTri.v3.x + ", " + newTri.v3.y + "|");
-					
+
                     Point p1 = new Point(Convert.ToInt32(newTri.v1.x), Convert.ToInt32(newTri.v1.y)); //Creating all 3 points:
                     Point p2 = new Point(Convert.ToInt32(newTri.v2.x), Convert.ToInt32(newTri.v2.y));
                     Point p3 = new Point(Convert.ToInt32(newTri.v3.x), Convert.ToInt32(newTri.v3.y));
@@ -149,10 +149,10 @@ namespace _3d
                     Pen pen;
                     pen = new Pen(shapeRec.colors[0]); //Setting pen color to shape color
                     pen.Width = 1;
-					
+
                     Debug.Write("DRAWING SQUARE " + squareCount + ":   "); //Debugging information:
                     Debug.WriteLine(newSquare.v1.x + ", " + newSquare.v1.y + "| " + newSquare.v2.x + ", " + newSquare.v2.y + "| " + newSquare.v3.x + ", " + newSquare.v3.y + "|" + newSquare.v4.x + ", " + newSquare.v4.y);
-					
+
                     Point p1 = new Point(Convert.ToInt32(newSquare.v1.x), Convert.ToInt32(newSquare.v1.y)); //Creating all 4 points:
                     Point p2 = new Point(Convert.ToInt32(newSquare.v2.x), Convert.ToInt32(newSquare.v2.y));
                     Point p3 = new Point(Convert.ToInt32(newSquare.v3.x), Convert.ToInt32(newSquare.v3.y));
@@ -191,8 +191,8 @@ namespace _3d
 
     class RenderCalculator
     {
-		//Render calculator is a list of 3x3 Matrices which are used
-		// to calculate the final matrix to transform each vertex by.
+        //Render calculator is a list of 3x3 Matrices which are used
+        // to calculate the final matrix to transform each vertex by.
         public Matrix3 GetRotMatrix(double heading, double pitch)
         {
             heading = ToRadians(heading);
