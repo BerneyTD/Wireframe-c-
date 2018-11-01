@@ -1,0 +1,336 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Diagnostics;
+
+namespace _3d
+{
+    public partial class Form1 : Form
+    {
+        public Form1()
+        {
+            InitializeComponent();
+        }
+        ShapeRecord Tetra1;
+        ShapeRecord Cube1;
+        Bitmap screen;
+        private void Form1_Load(object sender, EventArgs e)
+        {
+			//EXAMPLE SETUP WHICH CREATES SEVERAL DIFFERENT SHAPE TYPES,
+			//ADDS THEM TO A RECORD, AND CAN USE THESE TO RENDER THEM.
+            screen = new Bitmap(400, 400); // Init screen
+
+            Shape tetraheadron = new Shape();
+            tetraheadron.AddTri(new Triangle(new Vertex(100, 100, 100),
+                                             new Vertex(-100, -100, 100),
+                                             new Vertex(-100, 100, -100)));
+            tetraheadron.AddTri(new Triangle(new Vertex(100, 100, 100),
+                                             new Vertex(-100, -100, 100),
+                                             new Vertex(100, -100, -100)));
+            tetraheadron.AddTri(new Triangle(new Vertex(-100, 100, -100),
+                                             new Vertex(100, -100, -100),
+                                             new Vertex(100, 100, 100)));
+            tetraheadron.AddTri(new Triangle(new Vertex(-100, 100, -100),
+                                             new Vertex(100, -100, -100),
+                                             new Vertex(-100, -100, 100)));
+
+            Shape cube = new Shape();
+            cube.AddSquare(new Square(new Vertex(100, 100, 100),
+                                      new Vertex(-100, 100, 100),
+                                      new Vertex(-100, 100, -100),
+                                      new Vertex(100, 100, -100)));
+            cube.AddSquare(new Square(new Vertex(-100, 100, 100),
+                                      new Vertex(100, 100, 100),
+                                      new Vertex(100, -100, 100),
+                                      new Vertex(-100, -100, 100)));
+            cube.AddSquare(new Square(new Vertex(-100, -100, 100),
+                                      new Vertex(100, -100, 100),
+                                      new Vertex(100, -100, -100),
+                                      new Vertex(-100, -100, -100)));
+            cube.AddSquare(new Square(new Vertex(-100, 100, -100),
+                                      new Vertex(100, 100, -100),
+                                      new Vertex(100, -100, -100),
+                                      new Vertex(-100, -100, -100)));
+            cube.AddSquare(new Square(new Vertex(-100, 100, -100),
+                                      new Vertex(-100, 100, 100),
+                                      new Vertex(-100, -100, 100),
+                                      new Vertex(-100, -100, -100)));
+            cube.AddSquare(new Square(new Vertex(100, 100, -100),
+                                      new Vertex(100, 100, 100),
+                                      new Vertex(100, -100, 100),
+                                      new Vertex(100, -100, -100)));
+
+            Tetra1 = new ShapeRecord(tetraheadron, 0, 0, 0.4, 200, 200);
+            Cube1 = new ShapeRecord(cube, 0, 0, 0.75, 200, 200);
+
+            List<ShapeRecord> ShapeList = new List<ShapeRecord> { Tetra1, Cube1 };
+			
+			ClearScreen(); //Set Screen to black
+			foreach(ShapeRecord shapeRec in ShapeList) //Draw each shape in the list of records:
+			{
+				DrawShape(shapeRec, screen)
+			}
+        }
+
+        void ClearScreen(Bitmap screen)
+        {
+            using (Graphics g = Graphics.FromImage(screen))
+            {
+                g.Clear(Color.Black);
+            }
+        }
+
+        void DrawShape(ShapeRecord shapeRec, Bitmap screen)
+        {
+            RenderCalculator rendCalc = new RenderCalculator();
+
+            using (Graphics g = Graphics.FromImage(screen))
+            {
+                int triCount = 0; //Debugging var
+                int squareCount = 0; //Debugging var
+                Matrix3 transform = rendCalc.GetRotMatrix(shapeRec.heading, shapeRec.pitch); // Set transform matrix to roation matrix
+                transform = transform.Multiply(rendCalc.GetScaleMatrix(shapeRec.scale));   // Multiply transform matrix by scale matrix
+                //g.Clear(Color.Black);
+                foreach (Triangle t in shapeRec.shape.tris) // Drawing the shape's triangles:
+                {
+                    Triangle newTri = new Triangle(t.v1, t.v2, t.v3);
+
+                    newTri.v1 = transform.Transform(t.v1);//Multiplying each vertex by transformation matrix:
+                    newTri.v2 = transform.Transform(t.v2);
+                    newTri.v3 = transform.Transform(t.v3);
+
+                    newTri.v1.x += shapeRec.x; //Translating each vertex by input a & y values:
+                    newTri.v1.y += shapeRec.y;
+                    newTri.v2.x += shapeRec.x;
+                    newTri.v2.y += shapeRec.y;
+                    newTri.v3.x += shapeRec.x;
+                    newTri.v3.y += shapeRec.y;
+
+                    Pen pen;
+                    pen = new Pen(shapeRec.colors[0]); //Setting pen color to shape color
+                    pen.Width = 1;
+					
+                    Debug.Write("DRAWING TRIANGLE " + triCount + ":   "); //Debugging information:
+                    Debug.WriteLine(newTri.v1.x + ", " + newTri.v1.y + "| " + newTri.v2.x + ", " + newTri.v2.y + "| " + newTri.v3.x + ", " + newTri.v3.y + "|");
+					
+                    Point p1 = new Point(Convert.ToInt32(newTri.v1.x), Convert.ToInt32(newTri.v1.y)); //Creating all 3 points:
+                    Point p2 = new Point(Convert.ToInt32(newTri.v2.x), Convert.ToInt32(newTri.v2.y));
+                    Point p3 = new Point(Convert.ToInt32(newTri.v3.x), Convert.ToInt32(newTri.v3.y));
+                    PointF[] lineList = { p1, p2, p3, p1 };
+                    g.DrawLines(pen, lineList); //Drawing all 3 points
+                    triCount += 1;
+                }
+
+                foreach (Square s in shapeRec.shape.squares) //Drawing the shape's squares:
+                {
+                    Square newSquare = new Square(s.v1, s.v2, s.v3, s.v4);
+
+                    newSquare.v1 = transform.Transform(s.v1); //Multiplying each vertex by transformation matrix:
+                    newSquare.v2 = transform.Transform(s.v2);
+                    newSquare.v3 = transform.Transform(s.v3);
+                    newSquare.v4 = transform.Transform(s.v4);
+
+                    newSquare.v1.x += shapeRec.x; //Translating each vertex by input a & y values:
+                    newSquare.v1.y += shapeRec.y;
+                    newSquare.v2.x += shapeRec.x;
+                    newSquare.v2.y += shapeRec.y;
+                    newSquare.v3.x += shapeRec.x;
+                    newSquare.v3.y += shapeRec.y;
+                    newSquare.v4.x += shapeRec.x;
+                    newSquare.v4.y += shapeRec.y;
+
+                    Pen pen;
+                    pen = new Pen(shapeRec.colors[0]); //Setting pen color to shape color
+                    pen.Width = 1;
+					
+                    Debug.Write("DRAWING SQUARE " + squareCount + ":   "); //Debugging information:
+                    Debug.WriteLine(newSquare.v1.x + ", " + newSquare.v1.y + "| " + newSquare.v2.x + ", " + newSquare.v2.y + "| " + newSquare.v3.x + ", " + newSquare.v3.y + "|" + newSquare.v4.x + ", " + newSquare.v4.y);
+					
+                    Point p1 = new Point(Convert.ToInt32(newSquare.v1.x), Convert.ToInt32(newSquare.v1.y)); //Creating all 4 points:
+                    Point p2 = new Point(Convert.ToInt32(newSquare.v2.x), Convert.ToInt32(newSquare.v2.y));
+                    Point p3 = new Point(Convert.ToInt32(newSquare.v3.x), Convert.ToInt32(newSquare.v3.y));
+                    Point p4 = new Point(Convert.ToInt32(newSquare.v4.x), Convert.ToInt32(newSquare.v4.y));
+                    PointF[] lineList = { p1, p2, p3, p4, p1 };
+                    g.DrawLines(pen, lineList); //Drawing all 4 points
+                    squareCount += 1;
+                }
+                g.Dispose();
+            }
+            pictureBox1.Image = screen; //Set dispalyed picture box to screen bitmap
+        }
+
+    }
+
+    struct ShapeRecord
+    {
+        public Shape shape;    //The shape used
+        public double heading; //Rotation along the x-z plane in degrees
+        public double pitch;   //Rotation along the y-z plane in degrees
+        public double scale;   //Scale of shape
+        public double x;       //Distance to move object on screen x, centred [0,0]
+        public double y;       //Distance to move object on screen y, centred [0,0]
+        public List<Color> colors; //List of colors to use to render each line.
+        public ShapeRecord(Shape sh, double h, double p, double s, double x1, double y1)
+        {
+            shape = sh;
+            heading = h;
+            pitch = p;
+            scale = s;
+            x = x1;
+            y = y1;
+            colors = new List<Color> { Color.White };
+        }
+    }
+
+    class RenderCalculator
+    {
+		//Render calculator is a list of 3x3 Matrices which are used
+		// to calculate the final matrix to transform each vertex by.
+        public Matrix3 GetRotMatrix(double heading, double pitch)
+        {
+            heading = ToRadians(heading);
+            pitch = ToRadians(pitch);
+            Matrix3 headingTransform = new Matrix3(new double[]
+            {
+                Math.Cos(heading), 0, Math.Sin(heading),
+                0, 1, 0,
+                -Math.Sin(heading), 0, Math.Cos(heading)
+            });
+            Matrix3 pitchTransform = new Matrix3(new double[]
+            {
+                1, 0, 0,
+                0, Math.Cos(pitch), Math.Sin(pitch),
+                0, -Math.Sin(pitch), Math.Cos(pitch)
+            });
+
+            Matrix3 transform = headingTransform.Multiply(pitchTransform);
+            return transform;
+        }
+
+        public Matrix3 GetScaleMatrix(double scale)
+        {
+            Matrix3 scaleTransform = new Matrix3(new double[]
+            {
+                scale, 0, 0,
+                0, scale, 0,
+                0, 0, scale
+            });
+            return scaleTransform;
+        }
+
+        double ToRadians(double angle)
+        {
+            return (Math.PI / 180) * angle;
+        }
+    }
+
+    class Matrix3 //A List of 9 values which are used to convert a 3D Coordinate into a 2D one.
+    {
+        double[] values = new double[9];
+        public Matrix3(double[] values)
+        {
+            this.values = values;
+        }
+
+        public Matrix3 Multiply(Matrix3 other) //Multiply this matrix by another
+        {
+            double[] result = new double[9];
+            for (int x = 0; x < 3; x++)
+            {
+                for (int y = 0; y < 3; y++)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        result[x * 3 + y] += this.values[x * 3 + i] * other.values[i * 3 + y];
+                    }
+                }
+            }
+            return new Matrix3(result);
+        }
+
+        public Vertex Transform(Vertex input) //Use this Matrix to transform a 3D vertex to 2D format:
+        {
+            return new Vertex(
+                input.x * values[0] + input.y * values[3] + input.z * values[6],
+                input.x * values[1] + input.y * values[4] + input.z * values[7],
+                input.x * values[2] + input.y * values[5] + input.z * values[8]);
+        }
+
+    }
+
+    class Vertex //A List of 3 coordinates
+    {
+        public double x; //X axis is across screen
+        public double y; //Y axis is up and down screen
+        public double z; //Z axis is adjacent to X axis
+        public Vertex(double x, double y, double z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+    }
+
+    class Triangle //A list of 3 Vertecies
+    {
+        public Vertex v1;
+        public Vertex v2;
+        public Vertex v3;
+        public Triangle(Vertex v1, Vertex v2, Vertex v3)
+        {
+            this.v1 = v1;
+            this.v2 = v2;
+            this.v3 = v3;
+        }
+    }
+
+    class Square //A list of 4 Verticies
+    {
+        public Vertex v1;
+        public Vertex v2;
+        public Vertex v3;
+        public Vertex v4;
+
+        public Square(Vertex v1, Vertex v2, Vertex v3, Vertex v4)
+        {
+            this.v1 = v1;
+            this.v2 = v2;
+            this.v3 = v3;
+            this.v4 = v4;
+        }
+    }
+
+    class Shape //Two lists of Triangles and Squares respectively.
+    {
+        public List<Triangle> tris = new List<Triangle>();
+        public List<Square> squares = new List<Square>();
+        public void AddTri(Triangle t)
+        {
+            tris.Add(t);
+        }
+        public Triangle GetTri(int index)
+        {
+            return tris[index];
+        }
+
+        public void AddSquare(Square s)
+        {
+            squares.Add(s);
+        }
+
+        public Square GetSquare(int index)
+        {
+            return squares[index];
+        }
+    }
+}
+
+
+
